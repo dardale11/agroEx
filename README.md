@@ -25,11 +25,6 @@ all the compnents are strtured together in the `MainView` in views
 
 To install and run the project, follow these steps:
 
-1. Clone the repository: `git clone https://github.com/dardale11/FileTree.git`
-2. Change to the client directory: `cd client/file-viewer`
-3. Install dependencies: `npm install`
-4. Start the client: `ng serve`
-5. Change to the server directory: `cd ../../server`
-6. Install dependencies: `npm install`
-7. Start the server: `node server.js`
-8. View the app at `http://localhost:4200`
+1. Clone the repository: `git clone  https://github.com/dardale11/agroEx.git`
+2. Install dependencies: `yarn install`
+3. Start the app (ios): `npx react-native run-ios`
