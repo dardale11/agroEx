@@ -1,6 +1,6 @@
 import {Pressable, StyleSheet, Text} from 'react-native';
 import React from 'react';
-import {AppState, SliderItem} from '../../types/types';
+import {SliderItem} from '../../types/types';
 import {useDispatch} from 'react-redux';
 import {handleSelectionChange} from '../redux/reducers/itemsSlice';
 import {ListType} from '../../types/enums';
