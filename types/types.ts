@@ -17,8 +17,6 @@ export interface SliderItem {
   name: string;
   isActive: boolean;
   isSelected: boolean;
-  idFieldName: keyof Item;
-  nameFieldName: keyof Item;
 }
 
 export interface AppState {
@@ -29,5 +27,7 @@ export interface AppState {
 
 export interface ListContainer {
   itemSelected: SliderItem | undefined;
+  idFieldName: keyof Item;
+  nameFieldName: keyof Item;
   list: SliderItem[];
 }

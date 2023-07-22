@@ -2,14 +2,34 @@ import {createSlice} from '@reduxjs/toolkit';
 import {AppState, Item, SliderItem} from '../../../types/types';
 import {ListType} from '../../../types/enums';
 
-import {convertList, getFilterdItems} from '../../helpers/transformers';
+import {
+  convertList,
+  getCleanList,
+  getFilterdItems,
+  getSelectedList,
+} from '../../helpers/transformers';
 
 const initialState: AppState = {
   itemsList: [],
   lists: {
-    [ListType.BrandList]: {itemSelected: undefined, list: []},
-    [ListType.QualityList]: {itemSelected: undefined, list: []},
-    [ListType.SizeList]: {itemSelected: undefined, list: []},
+    [ListType.BrandList]: {
+      itemSelected: undefined,
+      idFieldName: 'brandId' as keyof Item,
+      nameFieldName: 'brandName' as keyof Item,
+      list: [],
+    },
+    [ListType.QualityList]: {
+      itemSelected: undefined,
+      idFieldName: 'qualityId' as keyof Item,
+      nameFieldName: 'qualityName' as keyof Item,
+      list: [],
+    },
+    [ListType.SizeList]: {
+      itemSelected: undefined,
+      idFieldName: 'sizeId' as keyof Item,
+      nameFieldName: 'sizeName' as keyof Item,
+      list: [],
+    },
   },
   selectedItem: undefined,
 };
@@ -24,18 +44,19 @@ const itemsSlice = createSlice({
       state.itemsList = parsedData;
       state.lists[ListType.BrandList].list = convertList(
         parsedData,
-        'brandId',
-        'brandName',
+        state.lists[ListType.BrandList].idFieldName,
+        state.lists[ListType.BrandList].nameFieldName,
+        true,
       );
       state.lists[ListType.QualityList].list = convertList(
         parsedData,
-        'qualityId',
-        'qualityName',
+        state.lists[ListType.QualityList].idFieldName,
+        state.lists[ListType.QualityList].nameFieldName,
       );
       state.lists[ListType.SizeList].list = convertList(
         parsedData,
-        'sizeId',
-        'sizeName',
+        state.lists[ListType.SizeList].idFieldName,
+        state.lists[ListType.SizeList].nameFieldName,
       );
     },
     handleSelectionChange: (state, action) => {
@@ -43,102 +64,68 @@ const itemsSlice = createSlice({
       const listTyped = listType as ListType;
       const itemTyped = item as SliderItem;
 
-      if (!itemTyped.isSelected) {
-        // set selected item for list
-        state.lists[listTyped].itemSelected = itemTyped;
+      // change selected item in the selected list
+      state.lists[listTyped].itemSelected =
+        state.lists[listTyped].itemSelected?.id === itemTyped.id
+          ? undefined
+          : itemTyped;
 
-        // set unactive and selected for UI
-        state.lists[listTyped].list = state.lists[listTyped].list.map(elm =>
-          elm.id === itemTyped.id
-            ? {...elm, isSelected: true}
-            : {...elm, isActive: false},
-        );
+      state.lists[listTyped].list = getSelectedList(
+        state.lists[listTyped].list,
+        state.lists[listTyped].itemSelected,
+      );
 
+      state.selectedItem = undefined;
+
+      // reset all lists below
+      Object.keys(ListType)
+        .filter(key => isNaN(Number(key)))
+        .map(key => ListType[key as keyof typeof ListType])
+        .filter(listOrder => listOrder > listTyped)
+        .forEach(listIndex => {
+          state.lists[listIndex].itemSelected = undefined;
+          state.lists[listIndex].list = getCleanList(
+            state.lists[listIndex].list,
+          );
+        });
+
+      // item was selected - the lower list should be filtered
+      if (state.lists[listTyped].itemSelected) {
         // get the filterd items list
         const filteredItems = getFilterdItems(
           state.itemsList,
-          listTyped === ListType.BrandList
-            ? itemTyped
-            : state.lists[ListType.BrandList].itemSelected,
-          listTyped === ListType.QualityList
-            ? itemTyped
-            : state.lists[ListType.QualityList].itemSelected,
-          listTyped === ListType.SizeList
-            ? itemTyped
-            : state.lists[ListType.SizeList].itemSelected,
+          state.lists[ListType.BrandList].itemSelected,
+          state.lists[ListType.QualityList].itemSelected,
+          state.lists[ListType.SizeList].itemSelected,
         );
-        // if only one item in list then it is selected
-        console.log(filteredItems);
-        if (filteredItems.length === 1) {
-          state.selectedItem = filteredItems[0];
-        }
-        // iterate over the diffrent lists in order to manipulate the other lists
-        Object.keys(ListType)
-          .filter(key => isNaN(Number(key)))
-          .map(key => ListType[key as keyof typeof ListType])
-          .filter(list => list !== listTyped)
-          .map(otherList => {
-            // if list already selected so no need to change
-            if (!state.lists[otherList].itemSelected) {
-              const first = state.lists[otherList].list[0];
-              const subFilteredList = convertList(
-                filteredItems,
-                first.idFieldName,
-                first.nameFieldName,
-              );
 
-              //exctarct ids of valid items
-              const idsList = subFilteredList.map(elm => elm.id);
-              state.lists[otherList].list = state.lists[otherList].list.map(
-                elm => {
-                  return {...elm, isActive: idsList.includes(elm.id)};
-                },
-              );
-            }
-          });
+        // set selected item
+        state.selectedItem =
+          filteredItems.length === 1 &&
+          state.lists[ListType.BrandList].itemSelected &&
+          state.lists[ListType.QualityList].itemSelected &&
+          state.lists[ListType.SizeList].itemSelected
+            ? filteredItems[0]
+            : undefined;
 
-        // item was un selected
-      } else {
-        state.lists[listTyped].itemSelected = undefined;
-        state.lists[listTyped].list = state.lists[listTyped].list.map(
-          itemSlider => {
-            return {...itemSlider, isSelected: false};
-          },
-        );
-        const filteredItems = getFilterdItems(
-          state.itemsList,
-          listTyped === ListType.BrandList
-            ? undefined
-            : state.lists[ListType.BrandList].itemSelected,
-          listTyped === ListType.QualityList
-            ? undefined
-            : state.lists[ListType.QualityList].itemSelected,
-          listTyped === ListType.SizeList
-            ? undefined
-            : state.lists[ListType.SizeList].itemSelected,
-        );
-        if (filteredItems.length > 1) {
-          state.selectedItem = undefined;
-        }
-        Object.keys(ListType)
-          .filter(key => isNaN(Number(key)))
-          .map(key => ListType[key as keyof typeof ListType])
-          .map(otherList => {
-            if (!state.lists[otherList].itemSelected) {
-              const first = state.lists[otherList].list[0];
-              const subFilteredList = convertList(
-                filteredItems,
-                first.idFieldName,
-                first.nameFieldName,
-              );
-              const idsList = subFilteredList.map(elm => elm.id);
-              state.lists[otherList].list = state.lists[otherList].list.map(
-                elm => {
-                  return {...elm, isActive: idsList.includes(elm.id)};
-                },
-              );
-            }
+        // take lower order list
+        const listIndex = (listTyped + 1) as ListType;
+        const numberOfKeys = Object.values(ListType).length / 2;
+        if (listIndex <= numberOfKeys) {
+          const subFilteredList = convertList(
+            filteredItems,
+            state.lists[listIndex].idFieldName,
+            state.lists[listIndex].nameFieldName,
+          );
+
+          //exctarct ids of valid items
+          const idsList = subFilteredList.map(elm => elm.id);
+
+          // disable invalid items
+          state.lists[listIndex].list = state.lists[listIndex].list.map(elm => {
+            return {...elm, isActive: idsList.includes(elm.id)};
           });
+        }
       }
     },
   },

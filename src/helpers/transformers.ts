@@ -1,9 +1,11 @@
+import {ListType} from '../../types/enums';
 import {Item, SliderItem} from '../../types/types';
 
 export function convertList(
   itemList: Item[],
   idFieldName: keyof Item,
   nameFieldName: keyof Item,
+  setActive: boolean = false,
 ): SliderItem[] {
   const convertedList: SliderItem[] = [];
   const idSet = new Set<number>();
@@ -17,10 +19,8 @@ export function convertList(
       convertedList.push({
         id: itemId,
         name: itemName,
-        isActive: true,
+        isActive: setActive,
         isSelected: false,
-        idFieldName: idFieldName,
-        nameFieldName: nameFieldName,
       });
     }
   });
@@ -40,4 +40,19 @@ export function getFilterdItems(
       (selectedQuality ? item.qualityName === selectedQuality.name : true) &&
       (selectedSize ? item.sizeName === selectedSize.name : true),
   );
+}
+
+export function getSelectedList(
+  list: SliderItem[],
+  itemTyped: SliderItem | undefined,
+) {
+  return list.map((item: SliderItem) => {
+    return {...item, isSelected: item.id === itemTyped?.id};
+  });
+}
+
+export function getCleanList(list: SliderItem[]) {
+  return list.map(elm => {
+    return {...elm, isActive: false, isSelected: false};
+  });
 }

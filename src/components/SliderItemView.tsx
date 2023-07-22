@@ -14,14 +14,7 @@ const SliderItemView: React.FC<Props> = ({item, listType}) => {
   const dispatch = useDispatch();
 
   const handlePress = () => {
-    if (!item.isActive) {
-      return;
-    } else if (item.isSelected) {
-      dispatch(handleSelectionChange({listType: listType, item: item}));
-      return;
-    } else {
-      dispatch(handleSelectionChange({listType: listType, item: item}));
-    }
+    dispatch(handleSelectionChange({listType: listType, item: item}));
   };
 
   const textColor = !item.isActive
