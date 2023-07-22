@@ -56,3 +56,17 @@ export function getCleanList(list: SliderItem[]) {
     return {...elm, isActive: false, isSelected: false};
   });
 }
+
+export function uniqueList(list: Item[]) {
+  const first: Item = list[0];
+  for (let item of list) {
+    if (
+      item.brandName !== first.brandName ||
+      item.qualityName !== first.qualityName ||
+      item.sizeName !== first.sizeName
+    ) {
+      return false;
+    }
+  }
+  return true;
+}

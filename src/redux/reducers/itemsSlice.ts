@@ -7,6 +7,7 @@ import {
   getCleanList,
   getFilterdItems,
   getSelectedList,
+  uniqueList,
 } from '../../helpers/transformers';
 
 const initialState: AppState = {
@@ -101,7 +102,7 @@ const itemsSlice = createSlice({
 
         // set selected item
         state.selectedItem =
-          filteredItems.length === 1 &&
+          (filteredItems.length === 1 || uniqueList(filteredItems)) &&
           state.lists[ListType.BrandList].itemSelected &&
           state.lists[ListType.QualityList].itemSelected &&
           state.lists[ListType.SizeList].itemSelected
@@ -121,10 +122,20 @@ const itemsSlice = createSlice({
           //exctarct ids of valid items
           const idsList = subFilteredList.map(elm => elm.id);
 
-          // disable invalid items
-          state.lists[listIndex].list = state.lists[listIndex].list.map(elm => {
-            return {...elm, isActive: idsList.includes(elm.id)};
-          });
+          if (
+            (filteredItems.length === 1 || uniqueList(filteredItems)) &&
+            state.lists[ListType.BrandList].itemSelected &&
+            state.lists[ListType.QualityList].itemSelected
+          ) {
+            state.selectedItem = filteredItems[0];
+          } else {
+            // disable invalid items
+            state.lists[listIndex].list = state.lists[listIndex].list.map(
+              elm => {
+                return {...elm, isActive: idsList.includes(elm.id)};
+              },
+            );
+          }
         }
       }
     },
